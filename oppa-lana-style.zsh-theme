@@ -1,5 +1,14 @@
+function prompt_char {
+    git branch >/dev/null 2>/dev/null && echo '○' && return
+    echo '○'
+}
+
+function virtualenv_info {
+    [ $VIRTUAL_ENV ] && echo '('`basename $VIRTUAL_ENV`') '
+}
+
 : ${omg_ungit_prompt:=$PS1}
-: ${omg_second_line:="%~ • "}
+: ${omg_second_line:="╰──$(virtualenv_info)$(prompt_char) %~ • "}
 : ${omg_is_a_git_repo_symbol:=''}
 : ${omg_has_untracked_files_symbol:=''}        #                ?    
 : ${omg_has_adds_symbol:=''}
@@ -23,7 +32,75 @@
 autoload -U colors && colors
 
 PROMPT='$(build_prompt)'
-RPROMPT='%{$reset_color%}%T %{$fg_bold[white]%} %n@%m%{$reset_color%}'
+RPROMPT='%{%K{default}%}%{%F{white}%}%{%K{white}%}%{%F{black}%} %{%F{magenta}%}%n% %{%F{cyan}%}@%{%F{magenta}%}%m%  %{%K{white}%}%{%F{black}%}%{%K{black}%}%{$FG[040]%} ⌚ %*%  %{$reset_color%}'
+
+## Main prompt
+default_build_prompt() {
+  RETVAL=$?
+  prompt_status
+  prompt_virtualenv
+  prompt_dir  
+  prompt_end
+}
+
+### Segment drawing
+# A few utility functions to make it easy and re-usable to draw segmented prompts
+
+CURRENT_BG='NONE'
+SEGMENT_SEPARATOR=''
+
+# Begin a segment
+# Takes two arguments, background and foreground. Both can be omitted,
+# rendering default background/foreground.
+prompt_segment() {
+  local bg fg
+  [[ -n $1 ]] && bg="%K{$1}" || bg="%k"
+  [[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+  if [[ $CURRENT_BG != 'NONE' && $1 != $CURRENT_BG ]]; then
+    echo -n " %{$bg%F{$CURRENT_BG}%}$SEGMENT_SEPARATOR%{$fg%} "
+  else
+    echo -n "%{$bg%}%{$fg%} "
+  fi
+  CURRENT_BG=$1
+  [[ -n $3 ]] && echo -n $3
+}
+
+# Status:
+# - was there an error
+# - am I root
+# - are there background jobs?
+prompt_status() {
+  local symbols
+  symbols=()
+  symbols+="%{%F{white}%} "
+  prompt_segment black default "$symbols"
+
+}
+
+# Virtualenv: current working virtualenv
+prompt_virtualenv() {
+  local virtualenv_path="$VIRTUAL_ENV"
+  if [[ -n $virtualenv_path && -n $VIRTUAL_ENV_DISABLE_PROMPT ]]; then
+    prompt_segment white black "(`basename $virtualenv_path`)"
+  fi
+}
+
+# Dir: current working directory
+prompt_dir() {
+  prompt_segment white black '%~'
+}
+
+# End the prompt, closing any open segments
+prompt_end() {
+  if [[ -n $CURRENT_BG ]]; then
+    echo -n " %{%k%F{$CURRENT_BG}%}$SEGMENT_SEPARATOR"
+  else
+    echo -n "%{%k%}"
+  fi
+  echo -n "%{%f%}
+╰──$(prompt_char) • "
+  CURRENT_BG=''
+}
 
 function enrich_append {
     local flag=$1
@@ -70,6 +147,7 @@ function custom_build_prompt {
     local red_on_black="%K{black}%F{red}"
     local black_on_red="%K{red}%F{black}"
     local white_on_red="%K{red}%F{white}"
+    local white_on_black="%K{black}%F{white}"
     local yellow_on_red="%K{red}%F{yellow}"
  
     # Flags
@@ -79,8 +157,10 @@ function custom_build_prompt {
 
     if [[ $is_a_git_repo == true ]]; then
         # on filesystem
-        prompt="${black_on_white} "
-        prompt+=$(enrich_append $is_a_git_repo $omg_is_a_git_repo_symbol "${black_on_white}")
+
+        prompt="${white_on_black} "
+        prompt+=$(enrich_append $is_a_git_repo $omg_is_a_git_repo_symbol "${white_on_black}")
+        prompt+=$(enrich_append $is_a_git_repo $SEGMENT_SEPARATOR "${black_on_white}")
         prompt+=$(enrich_append $has_stashes $omg_has_stashes_symbol "${yellow_on_white}")
 
         prompt+=$(enrich_append $has_untracked_files $omg_has_untracked_files_symbol "${red_on_white}")
@@ -135,8 +215,14 @@ function custom_build_prompt {
         prompt+="%k%F{red}%k%f
 ${omg_second_line}"
     else
-        prompt="${omg_ungit_prompt}"
+        prompt="$(default_build_prompt)"
     fi
  
     echo "${prompt}"
 }
+
+# More symbols to choose from:
+# ☀ ✹ ☔ ☄ ♆ ♀ ♁ ♐ ♇ ♈ ♉ ♚ ♛ ♜ ♝ ♞ ♟ ♠ ♣ ⚢ ⚲ ⚳ ⚴ ⚥ ⚤ ⚦ ⚒ ⚑ ⚐ ♺ ♻ ♼ ☰ ☱ ☲ ☳ ☴ ☵ ☶ ☷
+# ✡ ✔ ✖ ✚ ✱ ✤ ✦ ❤ ➜ ➟ ➼ ✂ ✎ ✐ ⨀ ⨁ ⨂ ⨍ ⨎ ⨏ ⨷ ⩚ ⩛ ⩡ ⩱ ⩲ ⩵  ⩶ ⨠ 
+# ⬅ ⬆ ⬇ ⬈ ⬉ ⬊ ⬋ ⬒ ⬓ ⬔ ⬕ ⬖ ⬗ ⬘ ⬙ ⬟  ⬤ 〒 ǀ ǁ ǂ ĭ Ť Ŧ ☆ ⭤⛃ ☁ ☂ ✭ ⚡ ➜ 𝝙
+#              ↵         ╭─ ╰─  😈 
