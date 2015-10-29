@@ -182,7 +182,7 @@ function custom_build_prompt {
 
         prompt="${prompt} ${white_on_red} ${white_on_red}"
         if [[ $detached == true ]]; then
-            prompt+=$(enrich_append $detached $omg_detached_symbol "${black_on_red}")
+            prompt+=$(enrich_append $detached $omg_detached_symbol "${white_on_red}")
             prompt+=$(enrich_append $detached "(${current_commit_hash:0:7})" "${white_on_red}")
         else            
             if [[ $has_upstream == false ]]; then
@@ -195,13 +195,13 @@ function custom_build_prompt {
                 fi
 
                 if [[ $has_diverged == true ]]; then
-                    prompt+=$(enrich_append true "-${commits_behind} ${omg_has_diverged_symbol} +${commits_ahead}" "${black_on_red}")
+                    prompt+=$(enrich_append true "-${commits_behind} ${omg_has_diverged_symbol} +${commits_ahead}" "${white_on_red}")
                 else
                     if [[ $commits_behind -gt 0 ]]; then
-                        prompt+=$(enrich_append true "-${commits_behind} %F{white}${omg_can_fast_forward_symbol}%F{black} --" "${white_on_red}")
+                        prompt+=$(enrich_append true "-${commits_behind} %F{white}${omg_can_fast_forward_symbol}%F{white} --" "${white_on_red}")
                     fi
                     if [[ $commits_ahead -gt 0 ]]; then
-                        prompt+=$(enrich_append true "-- %F{white}${omg_should_push_symbol}%F{black}  +${commits_ahead}" "${white_on_red}")
+                        prompt+=$(enrich_append true "-- %F{white}${omg_should_push_symbol}%F{white}  +${commits_ahead}" "${white_on_red}")
                     fi
                     if [[ $commits_ahead == 0 && $commits_behind == 0 ]]; then
                          prompt+=$(enrich_append true " --   -- " "${white_on_red}")
