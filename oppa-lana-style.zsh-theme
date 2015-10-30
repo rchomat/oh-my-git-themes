@@ -147,6 +147,7 @@ function custom_build_prompt {
     local red_on_black="%K{black}%F{red}"
     local black_on_green="%K{green}%F{black}"
     local white_on_green="%K{green}%F{white}"
+    local white_on_yellow="%K{yellow}%F{white}"
     local white_on_black="%K{black}%F{white}"
     local yellow_on_green="%K{green}%F{yellow}"
  
@@ -180,13 +181,20 @@ function custom_build_prompt {
 
         # where
 
-        prompt="${prompt} ${white_on_green} ${white_on_green}"
+        git_status_bg=${white_on_green}
+        git_status_color="green"
+        if [[ $has_untracked_files == true || $has_modifications == true || $has_deletions == true || $has_adds == true || $has_modifications_cached == true || $ready_to_commit == true || $action == true ]]; then
+	    git_status_bg=${white_on_yellow}
+            git_status_color="yellow"
+        fi
+
+        prompt="${prompt} ${git_clean} ${git_status_bg} ${git_status_bg}"
         if [[ $detached == true ]]; then
-            prompt+=$(enrich_append $detached $omg_detached_symbol "${white_on_green}")
-            prompt+=$(enrich_append $detached "(${current_commit_hash:0:7})" "${white_on_green}")
+            prompt+=$(enrich_append $detached $omg_detached_symbol "${git_status_bg}")
+            prompt+=$(enrich_append $detached "(${current_commit_hash:0:7})" "${git_status_bg}")
         else            
             if [[ $has_upstream == false ]]; then
-                prompt+=$(enrich_append true "-- ${omg_not_tracked_branch_symbol}  --  (${current_branch})" "${white_on_green}")
+                prompt+=$(enrich_append true "-- ${omg_not_tracked_branch_symbol}  --  (${current_branch})" "${git_status_bg}")
             else
                 if [[ $will_rebase == true ]]; then
                     local type_of_upstream=$omg_rebase_tracking_branch_symbol
@@ -195,24 +203,24 @@ function custom_build_prompt {
                 fi
 
                 if [[ $has_diverged == true ]]; then
-                    prompt+=$(enrich_append true "-${commits_behind} ${omg_has_diverged_symbol} +${commits_ahead}" "${white_on_green}")
+                    prompt+=$(enrich_append true "-${commits_behind} ${omg_has_diverged_symbol} +${commits_ahead}" "${git_status_bg}")
                 else
                     if [[ $commits_behind -gt 0 ]]; then
-                        prompt+=$(enrich_append true "-${commits_behind} %F{white}${omg_can_fast_forward_symbol}%F{white} --" "${white_on_green}")
+                        prompt+=$(enrich_append true "-${commits_behind} %F{white}${omg_can_fast_forward_symbol}%F{white} --" "${git_status_bg}")
                     fi
                     if [[ $commits_ahead -gt 0 ]]; then
-                        prompt+=$(enrich_append true "-- %F{white}${omg_should_push_symbol}%F{white}  +${commits_ahead}" "${white_on_green}")
+                        prompt+=$(enrich_append true "-- %F{white}${omg_should_push_symbol}%F{white}  +${commits_ahead}" "${git_status_bg}")
                     fi
                     if [[ $commits_ahead == 0 && $commits_behind == 0 ]]; then
-                         prompt+=$(enrich_append true " --   -- " "${white_on_green}")
+                         prompt+=$(enrich_append true " --   -- " "${git_status_bg}")
                     fi
                     
                 fi
-                prompt+=$(enrich_append true "(${current_branch} ${type_of_upstream} ${upstream//\/$current_branch/})" "${white_on_green}")
+                prompt+=$(enrich_append true "(${current_branch} ${type_of_upstream} ${upstream//\/$current_branch/})" "${git_status_bg}")
             fi
         fi
-        prompt+=$(enrich_append ${is_on_a_tag} "${omg_is_on_a_tag_symbol} ${tag_at_current_commit}" "${white_on_green}")
-        prompt+="%k%F{green}%k%f
+        prompt+=$(enrich_append ${is_on_a_tag} "${omg_is_on_a_tag_symbol} ${tag_at_current_commit}" "${git_status_bg}")
+        prompt+="%k%F{${git_status_color}}%k%f
 ${omg_second_line}"
     else
         prompt="$(default_build_prompt)"
