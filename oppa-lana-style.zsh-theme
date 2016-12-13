@@ -147,7 +147,7 @@ function custom_build_prompt {
     local red_on_black="%K{black}%F{red}"
     local black_on_green="%K{green}%F{black}"
     local white_on_green="%K{green}%F{white}"
-    local white_on_yellow="%K{yellow}%F{white}"
+    local white_on_yellow="%K{yellow}%F{black}"
     local white_on_black="%K{black}%F{white}"
     local yellow_on_green="%K{green}%F{yellow}"
  
